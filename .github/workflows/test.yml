@@ -1,17 +1,19 @@
-name: Test the Cosign Action!
-# This uses the cosign action here in the repo at head (using the checkout action and a relative path).
-# The version of cosign in the action itself is pinned to the last major release, not HEAD.
-# This is mainly to detect whether or not we break the action.yml
-on: [pull_request, push, workflow_dispatch]
+name: cosign-git-poc
+on: push
 
 jobs:
-  test_cosign_action:
+  poc:
     runs-on: ubuntu-latest
-    name: A job to test that our action definition works at HEAD.
+    env:
+      COSIGN_PASSWORD: ${{ secrets.COSIGN_KEY_PASSWORD }}
+    name: poc
     steps:
-      # To use this repository's private action,
-      # you must check out the repository
+      - uses: actions/checkout@v2
       - name: Install Cosign
         uses: sigstore/cosign-installer@main
       - name: Check install!
         run: cosign version
+      - name: Echo commit SHA
+        run: echo $GITHUB_SHA
+      - name: Sign HEAD commit
+        run: echo -n $COSIGN_PASSWORD | COSIGN_EXPERIMENTAL=1 cosign sign-blob -key $GITHUB_WORKSPACE/cosign.key <(echo -n $GITHUB_SHA)
